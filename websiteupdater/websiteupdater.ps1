@@ -2,7 +2,7 @@
 # Script.ps1
 #
 # Sample command line:
-#  .\websiteupdater.ps1 -source D:\eugenio\deploys\PosPre\ -destination D:\eugenio\deploys\Refactor\
+#  .\websiteupdater.ps1 -source D:\eugenio\deploys\Refactor\ -destination D:\eugenio\deploys\PosPre\ 
 #
 param(
 	[string] $source,
