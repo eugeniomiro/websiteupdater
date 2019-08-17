@@ -67,6 +67,11 @@ function copy-file-creating-folder-if-needed([string] $source, [string] $destina
 	Copy-Item -Path $source -Destination $destinationFile -Recurse
 }
 
+function Get-Relative-FileList($rootPath)
+{
+	Get-ChildItem -path $rootPath -Recurse | % { $_.FullName.Replace($rootPath, "") }
+}
+
 $frontendFolder = CreateFolderWithSlots -baseName $baseFolderName
 
 echo "new files are in      : $source"
@@ -74,38 +79,37 @@ echo "old files are in      : $destination"
 echo "destination folder is : $frontendFolder"
 
 Write-Verbose -Message "Building source list..."
-$sourceFileList = Get-ChildItem -path $source -Recurse | % { $_.FullName.Replace($source, "") }
+$sourceFileList = Get-Relative-FileList($source)
 Write-Verbose -Message "Source Files`n`t$([System.String]::Join("`n`r`t", $sourceFileList))"
 Write-Verbose -Message "found $($sourceFileList.Count) files" 
 Write-Verbose -Message ""
 
 Write-Verbose "Building destination list..."
-$destinationFileList = Get-ChildItem -path $destination -Recurse | % { $_.FullName.Replace($destination, "") }
+$destinationFileList = Get-Relative-FileList($destination)
 Write-Verbose -Message "Destination Files`n`t$([System.String]::Join("`n`r`t", $destinationFileList))"
 Write-Verbose -Message "found $($destinationFileList.Count) files" 
 Write-Verbose -Message ""
 
 $newFiles = $sourceFileList | where { !$destinationFileList.Contains($_) }
-Write-Verbose -Message "Destination Files`n`t$([System.String]::Join("`n`r`t", $newFiles))"
+Write-Verbose -Message "New Files`n`t$([System.String]::Join("`n`r`t", $newFiles))"
 Write-Verbose -Message "found $($newFiles.Count) new files"
 Write-Verbose -Message ""
 
 $filesToRemove = $destinationFileList | where { !$sourceFileList.Contains($_) }
-Write-Verbose -Message "Files to remove"
-Write-Verbose -Message "Destination Files`n`t$([System.String]::Join("`n`r`t", $filesToRemove))"
+Write-Verbose -Message "Files to remove`n`t$([System.String]::Join("`n`r`t", $filesToRemove))"
 Write-Verbose -Message "found $($filesToRemove.Count) files to remove"
 Write-Verbose -Message ""
 
 Write-Verbose -Message "Comparing similar files..."
-$differentFiles = $destinationFileList | 
+$changedFiles = $destinationFileList | 
 	where { $sourceFileList.Contains($_) -and $($(Get-Item $(join-Path -Path $source -ChildPath $_)) -isnot [System.IO.DirectoryInfo]) } | 
 	where { 
-		$allBytesSource      = [System.IO.File]::ReadAllBytes($(join-Path -Path $source -ChildPath $_))
+		$allBytesSource      = [System.IO.File]::ReadAllBytes($(join-Path -Path $source      -ChildPath $_))
 		$allBytesDestination = [System.IO.File]::ReadAllBytes($(join-Path -Path $destination -ChildPath $_))
 		!$(IsSameContent -firstFile $allBytesSource -secondFile $allBytesDestination)
 	}
-Write-Verbose -Message "Destination Files`n`t$([System.String]::Join("`n`r`t", $differentFiles))"
-Write-Verbose -Message "found $($differentFiles.Count) different files"
+Write-Verbose -Message "Changed Files`n`t$([System.String]::Join("`n`r`t", $changedFiles))"
+Write-Verbose -Message "found $($changedFiles.Count) changed files"
 Write-Verbose -Message ""
 
 $filesToRemoveFileName = $(Join-Path -Path $frontendFolder -ChildPath "filesToRemove.txt" )
@@ -121,7 +125,7 @@ $newFiles       | % {
 	$destinationFile = $(Join-Path -Path $frontendFolder -ChildPath $_)
 	copy-File-creating-folder-if-needed -source $sourceFile -destination $destinationFile
 }
-$differentFiles | % {
+$changedFiles | % {
 	$sourceFile = $(Join-Path -Path $source -ChildPath $_)
 	$destinationFile = $(Join-Path -Path $frontendFolder -ChildPath $_)
 	copy-File-creating-folder-if-needed -source $sourceFile -destination $destinationFile
