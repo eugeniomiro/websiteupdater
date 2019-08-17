@@ -44,7 +44,7 @@ function CreateFolderWithSlots([string] $baseName)
 			Write-Verbose "Switching to $tentativeFolderName"
 		}
 	} while (!$foundSlot)
-	md $tentativeFolderName
+	md $tentativeFolderName | Out-Null
 	$tentativeFolderName
 }
 
@@ -108,7 +108,7 @@ Write-Verbose -Message "Destination Files`n`t$([System.String]::Join("`n`r`t", $
 Write-Verbose -Message "found $($differentFiles.Count) different files"
 Write-Verbose -Message ""
 
-$filesToRemoveFileName = $(Join-Path -Path $frontendFolder -ChildPath "filesToRemove.txt" )[0]
+$filesToRemoveFileName = $(Join-Path -Path $frontendFolder -ChildPath "filesToRemove.txt" )
 
 $stream = [System.IO.StreamWriter] $filesToRemoveFileName
 $filesToRemove | ForEach-Object {
@@ -118,11 +118,11 @@ $stream.close()
 
 $newFiles       | % {
 	$sourceFile = $(Join-Path -Path $source -ChildPath $_)
-	$destinationFile = $(Join-Path -Path $frontendFolder -ChildPath $_)[0]
+	$destinationFile = $(Join-Path -Path $frontendFolder -ChildPath $_)
 	copy-File-creating-folder-if-needed -source $sourceFile -destination $destinationFile
 }
 $differentFiles | % {
 	$sourceFile = $(Join-Path -Path $source -ChildPath $_)
-	$destinationFile = $(Join-Path -Path $frontendFolder -ChildPath $_)[0]
+	$destinationFile = $(Join-Path -Path $frontendFolder -ChildPath $_)
 	copy-File-creating-folder-if-needed -source $sourceFile -destination $destinationFile
 }
